@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      height: 100vh;
+      background-color: #303030;
+      font-family: 'Arial', sans-serif;
+      color: #ffffff;
+    }
+
+    h1 {
+      color: #00ff00;
+      font-size: 3em;
+      margin-bottom: 20px;
+    }
+
+    #game-board {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      border: 2px solid #ffffff;
+      overflow: hidden;
+      border-radius: 15px;
+      margin-top: 20px;
+    }
+
+    .snake {
+      position: absolute;
+      border: 2px solid #00f;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: #00f;
+    }
+
+    .food {
+      position: absolute;
+      background-color: #f00;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      transform: rotate(45deg);
+    }
+
+    #game-over {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    #game-over p {
+      margin: 0;
+      font-size: 1.5em;
+      color: #303030;
+    }
+
+    #coin-count {
+      font-size: 1.5em;
+      margin-top: 10px;
+    }
+
+    #shop {
+      margin-top: 20px;
+    }
+
+    .shop-item {
+      display: inline-block;
+      margin: 5px;
+      cursor: pointer;
+    }
+
+    .shop-item img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Snake Game</h1>
+  <div id="coin-count">Coins: <span id="coins">0</span></div>
+  <div id="game-board"></div>
+  <div id="game-over">
+    <p>Game Over!</p>
+  </div>
+
+  <div id="shop">
+    <div class="shop-item" onclick="buySkin('blue')">
+      <img src="blue_skin.jpg" alt="Blue Skin">
+    </div>
+    <div class="shop-item" onclick="buySkin('green')">
+      <img src="green_skin.jpg" alt="Green Skin">
+    </div>
+    <!-- Add more shop items as needed -->
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const board = document.getElementById('game-board');
+      const gameOverDiv = document.getElementById('game-over');
+      const coinCountSpan = document.getElementById('coins');
+      const blockSize = 20;
+      const boardSize = 25;
+      const snakeSpeed = 150;
+      const coinValue = 10;
+      let coins = 0;
+
+      let snake = [{ x: 0, y: 0 }];
+      let direction = 'right';
+      let food = generateFood();
+      let gameRunning = true;
+
+      function draw() {
+        board.innerHTML = '';
+
+        snake.forEach(segment => {
+          const snakeSegment = document.createElement('div');
+          snakeSegment.className = 'snake';
+          snakeSegment.style.left = segment.x * blockSize + 'px';
+          snakeSegment.style.top = segment.y * blockSize + 'px';
+          board.appendChild(snakeSegment);
+        });
+
+        const foodElement = document.createElement('div');
+        foodElement.className = 'food';
+        foodElement.style.left = food.x * blockSize + 'px';
+        foodElement.style.top = food.y * blockSize + 'px';
+        board.appendChild(foodElement);
+      }
+
+      function generateFood() {
+        const x = Math.floor(Math.random() * boardSize);
+        const y = Math.floor(Math.random() * boardSize);
+        return { x, y };
+      }
+
+      function update() {
+        if (!gameRunning) {
+          return;
+        }
+
+        const head = Object.assign({}, snake[0]);
+        switch (direction) {
+          case 'up':
+            head.y = (head.y - 1 + boardSize) % boardSize;
+            break;
+          case 'down':
+            head.y = (head.y + 1) % boardSize;
+            break;
+          case 'left':
+            head.x = (head.x - 1 + boardSize) % boardSize;
+            break;
+          case 'right':
+            head.x = (head.x + 1) % boardSize;
+            break;
+        }
+        snake.unshift(head);
+
+        if (checkCollision()) {
+          gameOver();
+          return;
+        }
+
+        if (head.x === food.x && head.y === food.y) {
+          coins += coinValue;
+          coinCountSpan.textContent = coins;
+          food = generateFood();
+        } else {
+          snake.pop();
+        }
+
+        draw();
+        setTimeout(update, snakeSpeed);
+      }
+
+      function checkCollision() {
+        const head = snake[0];
+
+        if (head.x < 0 || head.x >= boardSize || head.y < 0 || head.y >= boardSize) {
+          return true;
+        }
+
+        for (let i = 1; i < snake.length; i++) {
+          if (head.x === snake[i].x && head.y === snake[i].y) {
+            return true;
+          }
+        }
+
+        return false;
+      }
+
+      function gameOver() {
+        gameRunning = false;
+        gameOverDiv.style.display = 'block';
+      }
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'ArrowUp' && direction !== 'down') {
+          direction = 'up';
+        } else if (event.key === 'ArrowDown' && direction !== 'up') {
+          direction = 'down';
+        } else if (event.key === 'ArrowLeft' && direction !== 'right') {
+          direction = 'left';
+        } else if (event.key === 'ArrowRight' && direction !== 'left') {
+          direction = 'right';
+        }
+      });
+
+      update();
+    });
+
+    function buySkin(skin) {
+      const coinCountSpan = document.getElementById('coins');
+      const coins = parseInt(coinCountSpan.textContent, 10);
+
+      if (coins >= 50) {
+        // Deduct coins and apply skin
+        coinCountSpan.textContent = coins - 50;
+        alert(`Skin "${skin}" purchased!`);
+      } else {
+        alert("Not enough coins!");
+      }
+    }
+  </script>
+</body>
+</html>
